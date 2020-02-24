@@ -1,0 +1,28 @@
+A sensible list of admin-type things that will need to happen:
+
+Load a contour file from wsx in some format ... parse_cvi42_xml.parseFile() ??
+
+Load a dicom image and convert to numpy(?) ...
+
+Test for matching between contour and dicom (via UID? other metadata?)
+
+test for matching between contour and FRAME of dicom (i.e ensure that image and mask ACTUALLY match)
+
+More efficient way of matching/looking up than repeat-tests? May just be asking Zahra to store more clearly, or something
+
+Create some kind of image, from a contour - allowing pixel-wise correspondence with an image
+
+Write an image (i.e. a segmentation output) to a contour file so it can be evaluated in cvi42 (THIS IS GOING TO BE HARD)
+
+raw image data (zipped) is in:
+/biobank/imaging_by_participant
+
+
+
+
+POTENTIAL ISSUES affecting network efficacy:
+data heterogeneity
+missing data... sort once a finalised dataset has been discussed.
+
+WHAT TO DO ABOUT DIFFERENT RESOLUTION
+PADDING ISSUES
