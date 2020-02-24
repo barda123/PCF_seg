@@ -8,3 +8,4 @@ Files containing manual contours are used to pull out the relevant dicom files f
 
 Image-mask pairs are then split into train and test sets, and used to train/evaluate a CNN - which is currently based around a U-net (Ronneberger 2015).
 
+There is also a notebook which takes a list of potential participants (marked healthy or diabetic) and gets a subsample of 250 age- and sex-matched pairs. 
