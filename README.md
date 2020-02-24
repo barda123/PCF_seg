@@ -1,6 +1,6 @@
 # PCF_seg
 
-This repo centres on quantification of pericardial fat deposits, using a CNN, and data from the UK Biobank.
+This repo centres on quantification of pericardial fat deposits from cardiac MRI, using a CNN, and data from the UK Biobank.
 
 I start by preprocessing manually-segmented images, created using cvi42 software. 
 
