@@ -1,4 +1,4 @@
 this directory needs to contain a few things:
 Firstly, a symbolic link to the shared "pericardial" directory, where manual segmentations are stored
-A spreadsheet containing details of the ~1600person UK Biobank cohort that is particularly of interest (healthy and diabetic people)
+A spreadsheet containing details of the ~3700 person UK Biobank cohort that is particularly of interest (healthy and diabetic people with imaging data recorded - healthy_diabetics.csv)
 A symbolic link to "imaging_by_participant", the folder which contains all of the zipped raw UKBB data
