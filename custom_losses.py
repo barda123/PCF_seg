@@ -58,9 +58,9 @@ def binary_crossentropy_weight_dict(weightDict):
     
         bce = keras.binary_crossentropy(yPred, yTrue)
     
-        wcce = bce * weights
+        wce = bce * weights
         
-        return tf.reduce_mean(wcce)
+        return tf.reduce_mean(wce)
         
     return loss
 
@@ -113,3 +113,15 @@ def binary_crossentropy_closeness_to_foreground(sigma=20):
         return tf.reduce_mean(wcce)
     
     return lossFunction
+
+
+
+
+def dice_coef(y_true, y_pred, smooth=1):
+    y_true_f = keras.flatten(y_true)
+    y_pred_f = keras.flatten(y_pred)
+    intersection = keras.sum(y_true_f * y_pred_f)
+    return (2. * intersection + smooth) / (keras.sum(y_true_f) + keras.sum(y_pred_f) + smooth)
+
+def dice_coef_loss(y_true, y_pred):
+    return 1-dice_coef(y_true, y_pred)
