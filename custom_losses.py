@@ -114,9 +114,6 @@ def binary_crossentropy_closeness_to_foreground(sigma=20):
     
     return lossFunction
 
-
-
-
 def dice_coef(y_true, y_pred, smooth=1):
     y_true_f = keras.flatten(y_true)
     y_pred_f = keras.flatten(y_pred)

@@ -1,5 +1,12 @@
 #This script contains utility functions concerned with loading and messing with paired dicom files and masks from pickles created by a Wenjia Bai script. 
 
+import re
+import numpy as np
+import pydicom as dcm
+from matplotlib.path import Path as mPath
+import pickle
+
+
 def centered_slice(X, L):
     L = np.asarray(L)
     shape = np.array(X.shape)
