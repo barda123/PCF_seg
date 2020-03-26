@@ -5,7 +5,8 @@ import numpy as np
 import pydicom as dcm
 from matplotlib.path import Path as mPath
 import pickle
-
+import warnings
+import matplotlib.pyplot as plt
 
 def centered_slice(X, L):
     L = np.asarray(L)
@@ -107,3 +108,73 @@ def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labe
         mask = pad_voxels(mask,pad_size)
 
     return im,mask,pxSize
+
+#A FUNCTION FOR SHOWING AN IMAGE AND MASK IN A NICE FORMAT
+
+def mask2line(mask):
+        
+    '''takes a mask (i.e. a boolean image) and turns it into a collection of horizontal and vertical lines, which can be plotted on top of an image. stolen from https://stackoverflow.com/questions/24539296/outline-a-region-in-a-graph'''
+    
+    # a vertical line segment is needed, when the pixels next to each other horizontally
+    #   belong to diffferent groups (one is part of the mask, the other isn't)
+    # after this ver_seg has two arrays, one for row coordinates, the other for column coordinates 
+    ver_seg = np.where(mask[:,1:] != mask[:,:-1])
+
+    # the same is repeated for horizontal segments
+    hor_seg = np.where(mask[1:,:] != mask[:-1,:])
+
+    # if we have a horizontal segment at 7,2, it means that it must be drawn between pixels
+    #   (2,7) and (2,8), i.e. from (2,8)..(3,8)
+    # in order to draw a discountinuous line, we add nans in between segments
+    l = []
+    for p in zip(*hor_seg):
+#         print(p)
+        l.append((p[1], p[0]+1))
+        l.append((p[1]+1, p[0]+1))
+        l.append((np.nan,np.nan))
+
+    # and the same for vertical segments
+    for p in zip(*ver_seg):
+        l.append((p[1]+1, p[0]))
+        l.append((p[1]+1, p[0]+1))
+        l.append((np.nan, np.nan))
+
+    # now we transform the list into a numpy array of Nx2 shape - all coordinates will be in pixel space
+    segments = np.array(l)
+    
+    return segments
+
+def show_image_with_masks(image,masks,maskOptions=[]):
+    
+    '''uses matplotlib to show an image, with masks as line overlays over the top. 
+    masks should be either a single boolean image, or a list of boolean images. Each should be of equal dimension to the image
+    maskOptions should be either a dict, or a lust of dicts, with options for mask display
+    '''
+    
+    #show the image
+    plt.imshow(image,cmap='gray') #gray is standard for medical images.
+    
+    #ensure that if a single mask is passed it will 
+    if type(masks) == np.ndarray or type(masks) == np.array:
+        masks = [masks]
+    
+    for mInd,mask in enumerate(masks):
+        assert mask.shape == image.shape,'Image and mask ' + str(mInd) + 'are not of equal dimension'
+    
+        if np.sum(mask)>0:
+            segments = mask2line(mask)
+
+            if type(maskOptions) == dict:
+                # plot all with the same options
+                plt.plot(segments[:,0], segments[:,1], **maskOptions)
+            elif type(maskOptions)==list and len(maskOptions) == len(masks): #i.e. if there is a dict for each mask
+                plt.plot(segments[:,0], segments[:,1], **maskOptions[mInd])
+            else:
+                plt.plot(segments[:,0], segments[:,1])
+
+
+    #no x or y ticks needed
+    plt.xticks([])
+    plt.yticks([])
+    
+    return segments
