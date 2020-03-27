@@ -44,6 +44,25 @@ def pad_voxels(voxels,pad_size):
 
 
 
+def load_image(dicomPath,pad_size=None):
+    
+    '''load an image from a single .dcm file. returns the normalised pixel array (range 0-1) and the pixel size in mm^2, and '''
+
+    #load dicom image.
+    image = dcm.dcmread(dicomPath,stop_before_pixels=False)
+    
+    #extract the raw pixel values from the dicom file, and normalise to 0-1
+    minVal = np.min(image.pixel_array)
+    maxVal = np.max(image.pixel_array)
+    im = (image.pixel_array - minVal) / (maxVal - minVal)
+    
+    #get size of pixels(required for downstream analysis)
+    pxSize = np.product(image.PixelSpacing)
+    
+    return im,pxSize
+    
+
+
 def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labelFilter=''):
 
     '''takes paths to matched files - a pickle output from parsing a cvi42wsx, and the corresponding dicom
@@ -51,11 +70,11 @@ def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labe
     padSize is the size of the output images - it currently allows cropping or padding.
     labelFilter allows passing in of a regex string for the NAMES of the different contours. 
     collapse specifies whether the different contours are or-ed (i.e. forcing a single-channel boolean mask)
-    WARNING - will have unexpected behaviour with collapse=False and heterogeneous labels 
+    WARNING - will have nonintuituve behaviour with collapse=False and heterogeneous labels, their ordering might not be deterministic 
     '''
     
-    #load dicom image.
-    image = dcm.dcmread(dicomPath,stop_before_pixels=False)
+    #load image, but do not pad or trim as this needs to be done in parallel with the mask, otherwise the pixel coordinates in the contour will not match
+    im,pxSize = load_image(dicomPath,pad_size=None)
     
     #load the pickled contour
     with open(picklePath,'rb') as f:
@@ -65,20 +84,18 @@ def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labe
     nContours = len(contour)
     
     #get dimensions of image
-    nx,ny = image.pixel_array.shape
+    nx,ny = im.shape
     
     #create indexers for filling in mask
     x,y = np.meshgrid(range(nx),range(ny))
     x = x.reshape(-1,1)
     y = y.reshape(-1,1)
     xy = np.concatenate((x,y),axis=1) #xy matrix
-    
-#     print(xy.shape)
-    
+        
     #create mask which can contain all contours.
-    mask = np.zeros((*image.pixel_array.shape,nContours),dtype = 'bool')
+    mask = np.zeros((*im.shape,nContours),dtype = 'bool')
     
-    #if no filter specified, the default one will always match
+    #if no filter specified, an empty string/default one will always match
     labelFilter = re.compile(labelFilter)
     
     for ind,c in enumerate(sorted(contour.keys())):
@@ -93,17 +110,9 @@ def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labe
     #if specified, collapse down to 1D representation
     if collapse:
         mask = np.max(mask,axis=2)
-        
-    #extract the raw pixel values from the dicom file, and normalise to 0-1
-    minVal = np.min(image.pixel_array)
-    maxVal = np.max(image.pixel_array)
-    im = (image.pixel_array - minVal) / (maxVal - minVal)
     
-    #get size of pixels(required for downstream analysis)
-    pxSize = np.product(image.PixelSpacing)
-    
+    #now pad the matched image and mask to the desired dimensions
     if pad_size != None:
-        
         im = pad_voxels(im,pad_size)
         mask = pad_voxels(mask,pad_size)
 
