@@ -7,6 +7,7 @@ from matplotlib.path import Path as mPath
 import pickle
 import warnings
 import matplotlib.pyplot as plt
+from scipy.spatial import distance
 
 def centered_slice(X, L):
     L = np.asarray(L)
@@ -57,9 +58,9 @@ def load_image(dicomPath,pad_size=None):
     im = (image.pixel_array - minVal) / (maxVal - minVal)
     
     #get size of pixels(required for downstream analysis)
-    pxSize = np.product(image.PixelSpacing)
+    pxArea = np.product(image.PixelSpacing)
     
-    return im,pxSize
+    return im,pxArea
     
 
 
@@ -74,7 +75,7 @@ def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labe
     '''
     
     #load image, but do not pad or trim as this needs to be done in parallel with the mask, otherwise the pixel coordinates in the contour will not match
-    im,pxSize = load_image(dicomPath,pad_size=None)
+    im,pxArea = load_image(dicomPath,pad_size=None)
     
     #load the pickled contour
     with open(picklePath,'rb') as f:
@@ -116,11 +117,11 @@ def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labe
         im = pad_voxels(im,pad_size)
         mask = pad_voxels(mask,pad_size)
 
-    return im,mask,pxSize
+    return im,mask,pxArea
 
 #A FUNCTION FOR SHOWING AN IMAGE AND MASK IN A NICE FORMAT
 
-def mask2line(mask):
+def mask2line(mask,addNa = True):
         
     '''takes a mask (i.e. a boolean image) and turns it into a collection of horizontal and vertical lines, which can be plotted on top of an image. stolen from https://stackoverflow.com/questions/24539296/outline-a-region-in-a-graph'''
     
@@ -140,13 +141,15 @@ def mask2line(mask):
 #         print(p)
         l.append((p[1], p[0]+1))
         l.append((p[1]+1, p[0]+1))
-        l.append((np.nan,np.nan))
+        if addNa:
+            l.append((np.nan,np.nan))
 
     # and the same for vertical segments
     for p in zip(*ver_seg):
         l.append((p[1]+1, p[0]))
         l.append((p[1]+1, p[0]+1))
-        l.append((np.nan, np.nan))
+        if addNa:
+            l.append((np.nan, np.nan))
 
     # now we transform the list into a numpy array of Nx2 shape - all coordinates will be in pixel space
     segments = np.array(l)
@@ -187,3 +190,50 @@ def show_image_with_masks(image,masks,maskOptions=[]):
     plt.yticks([])
     
     return segments
+
+
+
+#METRICS for segmentation accuracy
+def iou(yTrue,yPred):
+    '''intersection-over-union score for numpy arrays'''
+    
+    #ensure booleans, assuming scaling is 0-1
+    yTrue = yTrue>=0.5
+    yPred = yPred>=0.5
+    
+    intersection = np.sum(np.logical_and(yTrue,yPred))
+    
+    union = np.sum(np.logical_or(yTrue,yPred))
+    
+    return intersection/union
+
+
+def symmetric_hausdorff_distance(yTrue,yPred,pxSpacing):
+    
+    #ensure booleans and get point representation
+    yTrue = mask2line(yTrue >=0.5,addNa = False)
+    yPred = mask2line(yPred >=0.5,addNa = False)
+    
+    #symmetric hausdorff is maximum of directed hausdorffs. Multiply by a pixel size for real-world
+    hd = pxSpacing * np.maximum(distance.directed_hausdorff(yTrue,yPred)[0],
+                                distance.directed_hausdorff(yPred,yTrue)[0])
+    
+    return hd
+
+def mean_contour_distance(yTrue,yPred,pxSpacing):
+    
+    #ensure booleans and get point representation
+    yTrue = mask2line(yTrue >=0.5,addNa = False)
+    yPred = mask2line(yPred >=0.5,addNa = False)
+    
+    #get pairwise distances between the two arrays - from each point, the minimum distance to the other array
+    pwdistTrue = np.min(distance.cdist(yTrue,yPred),axis=1)
+    pwdistPred = np.min(distance.cdist(yPred,yTrue),axis=1)
+    
+    #mean-of-means for these two sets of distances
+    meanDistTrue = np.mean(pwdistTrue)
+    meanDistPred = np.mean(pwdistPred)
+    
+    return pxSpacing * np.mean([meanDistTrue,meanDistPred])
+    
+    
