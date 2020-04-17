@@ -207,6 +207,18 @@ def iou(yTrue,yPred):
     
     return intersection/union
 
+def dsc(yTrue,yPred):
+    '''dice-sorenson coefficient for numpy arrays'''
+
+    #ensure booleans, assuming scaling is 0-1
+    yTrue = yTrue>=0.5
+    yPred = yPred>=0.5
+    
+    numerator = 2 * np.sum(np.logical_and(yTrue,yPred))
+    
+    denominator = np.sum(yTrue) + np.sum(yPred)
+    
+    return numerator/denominator
 
 def symmetric_hausdorff_distance(yTrue,yPred,pxSpacing):
     
