@@ -61,25 +61,11 @@ def load_image(dicomPath,pad_size=None):
     pxArea = np.product(image.PixelSpacing)
     
     return im,pxArea
-    
 
 
-def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labelFilter=''):
 
-    '''takes paths to matched files - a pickle output from parsing a cvi42wsx, and the corresponding dicom
-    the pickle must refer directly to a single dicom file (i.e. not a higher-order one referring to a whole sequence)
-    padSize is the size of the output images - it currently allows cropping or padding.
-    labelFilter allows passing in of a regex string for the NAMES of the different contours. 
-    collapse specifies whether the different contours are or-ed (i.e. forcing a single-channel boolean mask)
-    WARNING - will have nonintuituve behaviour with collapse=False and heterogeneous labels, their ordering might not be deterministic 
-    '''
-    
-    #load image, but do not pad or trim as this needs to be done in parallel with the mask, otherwise the pixel coordinates in the contour will not match
-    im,pxArea = load_image(dicomPath,pad_size=None)
-    
-    #load the pickled contour
-    with open(picklePath,'rb') as f:
-        contour = pickle.load(f)
+def contour2mask(contour,im,collapse=True,labelFilter=''):
+    '''takes a contour (loaded from a pickle), and converts it to a boolean mask according to the dimensions of im. if there are multiple contours, collapse is a flag for whether to convert to a single mask'''
     
     #consider case where there are >=1 contours per image
     nContours = len(contour)
@@ -111,13 +97,37 @@ def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labe
     #if specified, collapse down to 1D representation
     if collapse:
         mask = np.max(mask,axis=2)
+
+    return mask
+        
+        
+def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labelFilter=''):
+
+    '''takes paths to matched files - a pickle output from parsing a cvi42wsx, and the corresponding dicom
+    the pickle must refer directly to a single dicom file (i.e. not a higher-order one referring to a whole sequence)
+    padSize is the size of the output images - it currently allows cropping or padding.
+    labelFilter allows passing in of a regex string for the NAMES of the different contours. 
+    collapse specifies whether the different contours are or-ed (i.e. forcing a single-channel boolean mask)
+    WARNING - will have nonintuituve behaviour with collapse=False and heterogeneous labels, their ordering might not be deterministic 
+    '''
+    
+    #load image, but do not pad or trim as this needs to be done in parallel with the mask, otherwise the pixel coordinates in the contour will not match
+    im,pxArea = load_image(dicomPath,pad_size=None)
+    
+    #load the pickled contour
+    with open(picklePath,'rb') as f:
+        contour = pickle.load(f)
+    
+    mask = contour2mask(contour,im,collapse)
     
     #now pad the matched image and mask to the desired dimensions
     if pad_size != None:
         im = pad_voxels(im,pad_size)
         mask = pad_voxels(mask,pad_size)
-
+        
     return im,mask,pxArea
+
+
 
 #A FUNCTION FOR SHOWING AN IMAGE AND MASK IN A NICE FORMAT
 
