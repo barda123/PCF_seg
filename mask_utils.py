@@ -97,7 +97,6 @@ def contour2mask(contour,im,collapse=True,labelFilter=''):
     #if specified, collapse down to 1D representation
     if collapse:
         mask = np.max(mask,axis=2)
-
     return mask
         
         
@@ -206,6 +205,8 @@ def show_image_with_masks(image,masks,maskOptions=[]):
 #METRICS for segmentation accuracy
 def iou(yTrue,yPred):
     '''intersection-over-union score for numpy arrays'''
+    
+    assert yTrue.shape == yPred.shape,'array sizes do not match'
     
     #ensure booleans, assuming scaling is 0-1
     yTrue = yTrue>=0.5

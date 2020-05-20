@@ -122,3 +122,13 @@ def dice_coef(y_true, y_pred, smooth=1):
 
 def dice_coef_loss(y_true, y_pred):
     return 1-dice_coef(y_true, y_pred)
+
+# def dice_coef(y_true, y_pred, smooth=1):
+# #     y_true_f = keras.flatten(y_true)
+# #     y_pred_f = keras.flatten(y_pred)
+#     intersection = keras.dot(y_true, keras.transpose(y_pred))
+#     union = keras.dot(y_true,keras.transpose(y_true))+keras.dot(y_pred,keras.transpose(y_pred))
+#     return (2. * intersection + smooth) / (union + smooth)
+
+# def dice_coef_loss(y_true, y_pred):
+#     return keras.mean(1-dice_coef(y_true, y_pred),axis=-1)
