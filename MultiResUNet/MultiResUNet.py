@@ -174,8 +174,8 @@ def MultiResUnet(height, width, n_channels, layer_dropout_rate=None , block_drop
         height {int} -- height of image 
         width {int} -- width of image 
         n_channels {int} -- number of channels in image
-        layer_dropout_rate {float between 0 and 1} -- the rate at which permanent dropout is applied to every single conv layer
-        block_dropout_rate {float between 0 and 1} -- the rate at which permanent dropout is applied to each res block
+        layer_dropout_rate {float between 0 and 1, or None} -- the rate at which permanent dropout is applied to every single conv layer
+        block_dropout_rate {float between 0 and 1, or None} -- the rate at which permanent dropout is applied to the output of each residual block
     
     Returns:
         [keras model] -- MultiResUNet model
@@ -217,7 +217,7 @@ def MultiResUnet(height, width, n_channels, layer_dropout_rate=None , block_drop
         2, 2), padding='same')(mresblock8), mresblock1], axis=3)
     mresblock9 = MultiResBlock(32, up9,individual_dropout_rate=layer_dropout_rate,output_dropout_rate=block_dropout_rate)
 
-    conv10 = conv2d_bn(mresblock9, 1, 1, 1, activation='sigmoid',individual_dropout_rate=layer_dropout_rate,output_dropout_rate=block_dropout_rate)
+    conv10 = conv2d_bn(mresblock9, 1, 1, 1, activation='sigmoid',dropout_rate=layer_dropout_rate)
     
     model = Model(inputs=[inputs], outputs=[conv10])
 
