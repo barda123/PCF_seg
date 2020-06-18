@@ -8,6 +8,7 @@ import pickle
 import warnings
 import matplotlib.pyplot as plt
 from scipy.spatial import distance
+from scipy.ndimage import zoom
 
 def centered_slice(X, L):
     L = np.asarray(L)
@@ -25,44 +26,75 @@ def centered_slice(X, L):
     idx = tuple(np.s_[a:b] for a, b in zip(starts, stops))
     return X[idx]
 
-def pad_voxels(voxels,pad_size):
+def pad_voxels(voxels,padSize):
     
     nx,ny = voxels.shape    
 
     #calculate edges and create tuple to ensure correct dimension
-    xedge = np.maximum((pad_size[0] - nx) //2,0)
-    yedge = np.maximum((pad_size[1] - ny) //2,0)
+    xedge = np.maximum((padSize[0] - nx) //2,0)
+    yedge = np.maximum((padSize[1] - ny) //2,0)
     pad_width = ( (int(np.floor(xedge)),int(np.ceil(xedge))) , (int(np.floor(yedge)),int(np.ceil(yedge))) )
 
     voxels= np.pad(voxels,pad_width,'constant')
     
-    if np.any([nx,ny] > pad_size): 
+    if np.any([nx,ny] > padSize): 
         warnings.warn('Image is larger than padding dimension you specified, so you are losing pixels at the edges')
         
-        voxels = centered_slice(voxels, pad_size)
+        voxels = centered_slice(voxels, padSize)
     
     return voxels
 
+def resample_image(image,pxSpacing,desiredPxSpacing):
+    
+    '''resamples an image to specified pixel dimensions, but needs to have the original ones specified. Will only work where pxSpacing and desiredPxSpacing  have the same len as the rank of the array. Will NOT WORK for '''
+    input_dtype = image.dtype
+    
+    #boolean images don't work too well with ndimage.zoom
+    image = image.astype('float')
+    
+    #calcilate zoom factor and do resample
+    resize = pxSpacing/desiredPxSpacing
+    image = zoom(image,resize,mode='nearest')
+    
+    #convert booleans back
+    if input_dtype == bool:
+        image = image > 0.5 #ensure boolean. don't really care about other type stuff.
+        
+    return image
 
+def normalise_image(image):
+    
+    '''takes an image (numpy array and rescales for raneg of 0 - 1'''
+    
+    image = image - image.min() / (image.max() - image.min())
+    
+#     image = (image -image.mean()) / image.std()
+    
+    return image
 
-def load_image(dicomPath,pad_size=None):
+def load_image(dicomPath,desiredPxSpacing= None, padSize=None):
     
     '''load an image from a single .dcm file. returns the normalised pixel array (range 0-1) and the pixel size in mm^2, and '''
 
     #load dicom image.
     image = dcm.dcmread(dicomPath,stop_before_pixels=False)
     
-    #extract the raw pixel values from the dicom file, and normalise to 0-1
-    minVal = np.min(image.pixel_array)
-    maxVal = np.max(image.pixel_array)
-    im = (image.pixel_array - minVal) / (maxVal - minVal)
-    
     #get size of pixels(required for downstream analysis)
-    pxArea = np.product(image.PixelSpacing)
+    pxSpacing = np.array(image.PixelSpacing)
     
-    return im,pxArea
-
-
+    im = image.pixel_array
+    
+    if desiredPxSpacing is not None:
+        im = resample_image(im,pxSpacing,desiredPxSpacing)
+        pxSpacing = desiredPxSpacing
+        
+    if padSize is not None:
+        im = pad_voxels(im,padSize)
+    
+    #normalise pixel intensities
+    im = normalise_image(im)
+    
+    return im,pxSpacing
 
 def contour2mask(contour,im,collapse=True,labelFilter=''):
     '''takes a contour (loaded from a pickle), and converts it to a boolean mask according to the dimensions of im. if there are multiple contours, collapse is a flag for whether to convert to a single mask'''
@@ -100,8 +132,8 @@ def contour2mask(contour,im,collapse=True,labelFilter=''):
     return mask
         
         
-def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labelFilter=''):
-
+def load_image_and_mask(picklePath,dicomPath,desiredPxSpacing = None, padSize = None, collapse=True,labelFilter=''):
+    
     '''takes paths to matched files - a pickle output from parsing a cvi42wsx, and the corresponding dicom
     the pickle must refer directly to a single dicom file (i.e. not a higher-order one referring to a whole sequence)
     padSize is the size of the output images - it currently allows cropping or padding.
@@ -111,7 +143,7 @@ def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labe
     '''
     
     #load image, but do not pad or trim as this needs to be done in parallel with the mask, otherwise the pixel coordinates in the contour will not match
-    im,pxArea = load_image(dicomPath,pad_size=None)
+    im,pxSpacing = load_image(dicomPath,padSize=None)
     
     #load the pickled contour
     with open(picklePath,'rb') as f:
@@ -119,14 +151,20 @@ def load_image_and_mask(picklePath,dicomPath,pad_size = None, collapse=True,labe
     
     mask = contour2mask(contour,im,collapse)
     
-    #now pad the matched image and mask to the desired dimensions
-    if pad_size != None:
-        im = pad_voxels(im,pad_size)
-        mask = pad_voxels(mask,pad_size)
+    #resample to desired pixel spacing if necessary
+    if desiredPxSpacing is not None:
+        im = resample_image(im,pxSpacing,desiredPxSpacing)
+        mask = resample_image(mask,pxSpacing,desiredPxSpacing)
+        pxSpacing = desiredPxSpacing
         
-    return im,mask,pxArea
-
-
+    #now pad the matched image and mask to the desired dimensions
+    if padSize is not None:
+        im = pad_voxels(im,padSize)
+        mask = pad_voxels(mask,padSize)
+        
+    im = normalise_image(im)
+        
+    return im,mask,pxSpacing
 
 #A FUNCTION FOR SHOWING AN IMAGE AND MASK IN A NICE FORMAT
 
