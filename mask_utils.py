@@ -131,7 +131,6 @@ def contour2mask(contour,im,collapse=True,labelFilter=''):
         mask = np.max(mask,axis=2)
     return mask
         
-        
 def load_image_and_mask(picklePath,dicomPath,desiredPxSpacing = None, padSize = None, collapse=True,labelFilter=''):
     
     '''takes paths to matched files - a pickle output from parsing a cvi42wsx, and the corresponding dicom
@@ -152,8 +151,9 @@ def load_image_and_mask(picklePath,dicomPath,desiredPxSpacing = None, padSize = 
     mask = contour2mask(contour,im,collapse)
     
     #resample to desired pixel spacing if necessary
-    if desiredPxSpacing is not None:
-        im = resample_image(im,pxSpacing,desiredPxSpacing)
+    if desiredPxSpacing is not None and np.any(pxSpacing != desiredPxSpacing):
+        
+        im = resample_image(im,pxSpacing,desiredPxSpacing)        
         mask = resample_image(mask,pxSpacing,desiredPxSpacing)
         pxSpacing = desiredPxSpacing
         
