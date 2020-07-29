@@ -31,15 +31,14 @@ def pad_voxels(voxels,padSize):
     nx,ny = voxels.shape    
 
     #calculate edges and create tuple to ensure correct dimension
-    xedge = np.maximum((padSize[0] - nx) //2,0)
-    yedge = np.maximum((padSize[1] - ny) //2,0)
-    pad_width = ( (int(np.floor(xedge)),int(np.ceil(xedge))) , (int(np.floor(yedge)),int(np.ceil(yedge))) )
+    xedge = np.maximum( (padSize[0] - nx)/2, 0 )
+    yedge = np.maximum( (padSize[1] - ny)/2, 0 )
+    pad_width = ( (int(np.ceil(xedge)),int(np.ceil(xedge))) , (int(np.ceil(yedge)),int(np.ceil(yedge))) )
 
     voxels= np.pad(voxels,pad_width,'constant')
     
-    if np.any([nx,ny] > padSize): 
-        warnings.warn('Image is larger than padding dimension you specified, so you are losing pixels at the edges')
-        
+    if any(real > desired for real,desired in zip(voxels.shape,padSize)): 
+        warnings.warn('Image is larger than padding dimension you specified, so you are losing pixels at the edges')        
         voxels = centered_slice(voxels, padSize)
     
     return voxels
@@ -66,11 +65,11 @@ def normalise_image(image):
     
     '''takes an image (numpy array and rescales for raneg of 0 - 1'''
     
-    image = image - image.min() / (image.max() - image.min())
+    scaled = (image - image.min()) / (image.max() - image.min())
     
 #     image = (image -image.mean()) / image.std()
     
-    return image
+    return scaled
 
 def load_image(dicomPath,desiredPxSpacing= None, padSize=None):
     
