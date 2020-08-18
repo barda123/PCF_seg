@@ -102,8 +102,8 @@ def mean_std_area(predictions):
     areas = np.sum(predictions,axis = 1)
     
     #mean, returning a value for each segmentation channel
-    mu = np.mean(areas,axis=0)
-    sigma = np.std(areas,axis=0)
+    mu = np.mean(areas,axis=0)[0]
+    sigma = np.std(areas,axis=0)[0]
     
     return mu,sigma
 
