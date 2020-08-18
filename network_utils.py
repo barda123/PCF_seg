@@ -61,34 +61,16 @@ class augmentImageSequence(Sequence):
 
 #FIXMMEEEEEEEE make it so these can be called on arrays where M>1!!!!! BECAUSE THIS SUCKS
 
-def global_iou(predictions):
     
-    '''takes the iou of multiple different segmentations'''
-    
-    intersection = np.min(predictions,axis=0).sum()
-    union = np.max(predictions,axis=0).sum()
-    
-    return intersection / union
-
-def global_dsc(predictions):
-    
-    N = predictions.shape[0]
-    numerator = N * np.min(predictions,axis=0).sum()
-    denominator = predictions.sum()
-    
-    return numerator/denominator
-    
-def mean_pairwise_iou(predictions):
-    
-    #all combinations of inputs
-    ious = [iou(a,b) for a,b in itertools.combinations(predictions,2)]
-    
-    return np.mean(ious)
-
 def mean_pairwise_dsc(predictions):
     
     #all combinations of samples, which will be axis 0
-    dscs = [dsc(a,b) for a,b in itertools.combinations(predictions,2)]
+    dscs = np.array([dsc(a,b) for a,b in itertools.combinations(predictions,2)])
+    
+    #zero-predictions produce undefined dice scores
+    dscs[np.isnan(dscs)] = 0
+    
+    assert not np.any(dscs<0),'wtf, there are dice scores less than 0'
     
     return np.mean(dscs)
     
@@ -140,17 +122,16 @@ def predict_stochastic(segmentationModel,N,accuracyModel, X):
     
     #draw N predictions from the model over x
     predictions = np.stack([segmentationModel.predict(X) for n in range(N)],axis=0)
-    
-    #binarise
-    predictions = predictions
-    
-    consensus = np.mean(predictions,axis=0)>0.5 
-    
+        
+    consensus = np.mean(predictions>0.5,axis=0)>0.5 
     
     #metrics described in Roy et al...
     uncertainty = voxel_uncertainty(predictions)
+    
     mpDsc = mean_pairwise_dsc(predictions)
-    predictedDsc = accuracyModel.predict(mpDsc)
+    predictedDsc = accuracyModel.predict(mpDsc.reshape(-1,1))[0][0]
+    #no Dice < 0
+    predictedDsc = max(predictedDsc,0)
     
 #     gDsc = global_dsc(predictions)
     
