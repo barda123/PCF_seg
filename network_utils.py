@@ -78,7 +78,7 @@ def voxel_uncertainty(predictions):
     
     '''voxel-wise uncertainty as defined in Roy et al (2018)'''
     
-    #strcture-and-voxel-wise uncertainty (compresses over the sample axis
+    #strcture-and-voxel-wise uncertainty (compresses over the sample axis)
     feature_uncertainty = -np.sum(predictions*np.log(predictions),axis = 0)
     #global uncertainty is the sum over the feature axis
     global_uncertainty = np.sum(feature_uncertainty,axis=-1)
@@ -132,6 +132,8 @@ def predict_stochastic(segmentationModel,N,accuracyModel, X):
     predictedDsc = accuracyModel.predict(mpDsc.reshape(-1,1))[0][0]
     #no Dice < 0
     predictedDsc = max(predictedDsc,0)
+    # no Dice > 1
+    predictedDsc = min(predictedDsc,1)
     
 #     gDsc = global_dsc(predictions)
     
