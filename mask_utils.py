@@ -71,7 +71,7 @@ def normalise_image(image):
     
     return scaled
 
-def load_image(dicomPath,desiredPxSpacing= None, padSize=None):
+def load_image(dicomPath,desiredPxSpacing= None, padSize=None,return_dicom_object=False):
     
     '''load an image from a single .dcm file. returns the normalised pixel array (range 0-1) and the pixel size in mm^2, and '''
 
@@ -93,7 +93,10 @@ def load_image(dicomPath,desiredPxSpacing= None, padSize=None):
     #normalise pixel intensities
     im = normalise_image(im)
     
-    return im,pxSpacing
+    if return_dicom_object:
+        return im,pxSpacing,image
+    else:
+        return im,pxSpacing
 
 def contour2mask(contour,im,collapse=True,labelFilter=''):
     '''takes a contour (loaded from a pickle), and converts it to a boolean mask according to the dimensions of im. if there are multiple contours, collapse is a flag for whether to convert to a single mask'''
