@@ -101,6 +101,6 @@ End-diastole images from 4Ch cine sequences are identified using the following c
 This combination is likely to be a problem at some point.
 
 To see options, run:
-`python predict_fat_areas --help` or `python predict_fat_areas -h`
+`python predict_fat_areas.py --help` or `python predict_fat_areas.py -h`
 
  
