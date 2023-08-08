@@ -64,7 +64,11 @@ In order to train a model using a combination of existing + novel data, I recomm
 
 *NB if interested, this script was based on `dev_notebooks/mrunet_Bayesian_dev.ipynb`, which contains a number of extra options commented out*
 
+### Evaluating model performance
+
 The notebook `dev_notebooks/quantify_model_performance.ipynb` is pretty similar to `train.py`, but does not create or save a model (if you need to recreate graphs etc on a pre-existing model).
+
+See also - `interobserver_variability.py`, which (with appropriate data access on GPU machine) allows you to quantify the agreement between 3 different readers using various different metrics. This can be used to contextualise model performance
 
 ### Running the inference pipeline on novel data
 
