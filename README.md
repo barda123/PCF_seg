@@ -27,6 +27,24 @@ When this was developed, it was a bit messy, and I haven't cleaned up perfectly.
 
 ### Setting up your virtual environment
 
+Uses python version 3.8.5
+
+```pyenv install 3.8.5
+pyenv local 3.8.5
+pip install virtualenv
+```
+
+Create a new virtual environment:
+
+```
+python -m venv .venv
+```
+
+activate it:
+`source .venv/bin/activate`
+
+and install all requirements:
+`pip install -r requirements.txt`
 
 ### Preprocessing wsx files and extracting dicoms for train/test data
 
@@ -73,6 +91,14 @@ See also - `interobserver_variability.py`, which (with appropriate data access o
 ### Running the inference pipeline on novel data
 
 There is an example of how this functions in `predict_fat_areas_UKB.ipynb` - although this has hardcoded locations of all files (including output and input locations). A more useful tool is provided in `predict_fat_areas.py`.
+
+This script assumes that all the DICOMs you want to quantify are in a beneath a single directory. It does not currently handle zipfiles, so you will need to extract DICOMs into the directory.
+
+End-diastole images from 4Ch cine sequences are identified using the following combination of metadata attributes:
+ * "cine" in the Series Description
+ * "4ch" in the Series Description
+ * Trigger Time = 0
+This combination is likely to be a problem at some point.
 
 To see options, run:
 `python predict_fat_areas --help` or `python predict_fat_areas -h`
