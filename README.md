@@ -72,7 +72,9 @@ See also - `interobserver_variability.py`, which (with appropriate data access o
 
 ### Running the inference pipeline on novel data
 
-There are a number of notebooks (in `./dev_notebooks`) which contain the steps for running inference on different datasets. At present the model location is hardcoded within the script - there is an option to override this.
+There is an example of how this functions in `predict_fat_areas_UKB.ipynb` - although this has hardcoded locations of all files (including output and input locations). A more useful tool is provided in `predict_fat_areas.py`.
 
-You can run it using:
-`python inference_on_directory.py` with options which 
+To see options, run:
+`python predict_fat_areas --help` or `python predict_fat_areas -h`
+
+ 
