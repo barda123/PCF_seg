@@ -6,6 +6,6 @@ I start by preprocessing manually-segmented images, created using cvi42 software
 
 Files containing manual contours are used to pull out the relevant dicom files from the (vast) UK Biobank dataset. The contours are used to make "masks" of the same dimension as the images.
 
-Image-mask pairs are then split into train and test sets, and used to train/evaluate a CNN - which is currently based around a U-net (Ronneberger 2015).
+Image-mask pairs are then split into train and test sets, and used to train/evaluate a CNN - which is based around a multi-residual U-net (Ozcan 2020) with added quality control mechanism
 
 There is also a notebook which takes a list of potential participants (marked healthy or diabetic) and gets a subsample of 250 age- and sex-matched pairs. 
