@@ -71,7 +71,7 @@ if not os.path.isdir(modelDir):
 dateStr = datetime.now().strftime("%Y-%m-%d_%H:%M")
 outputName = os.path.join(modelDir, "mrunet_bayesian_" + dateStr)
 
-print(f"Model name = {outputName}")
+print(f"Model output location = {outputName}")
 
 DataDir = "./data/pericardial/wsx_round2/"
 
@@ -168,6 +168,8 @@ model.compile(
     metrics=["accuracy", metrics.MeanIoU(num_classes=2)],
 )
 
+print("Fitting model...")
+
 fitHistory = model.fit(
     augmentImageSequence(X, Y, dataGenArgs, batchSize=BATCHSIZE),
     epochs=300,  # think about me...
@@ -179,7 +181,7 @@ fitHistory = model.fit(
     verbose=1,
 )
 
-
+print("Evaluating model...")
 # Lets have a look at how fitting has proceeded
 plt.figure(figsize=(15, 10))
 
@@ -465,9 +467,6 @@ plt.savefig(outputName + "_train_examples.png")
 
 # Examples from the test set:
 
-# In[ ]:
-
-
 negs = 25
 
 egs = np.random.choice(range(MTest), negs, replace=False)
@@ -512,7 +511,7 @@ plt.savefig(outputName + "_test_examples.png")
 
 
 # Now, save the model for use elsewhere, along with some performance statistics
-
+print(f"Saving model to {outputName}")
 # need to save architecture and weight separately as custom loss functions cause issues with loading from a single .h5
 # serialize model to JSON
 model_json = model.to_json()
