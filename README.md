@@ -98,7 +98,7 @@ End-diastole images from 4Ch cine sequences are identified using the following c
  * "cine" in the Series Description
  * "4ch" in the Series Description
  * Trigger Time = 0
-This combination is likely to be a problem at some point.
+This combination is likely to be a problem at some point - the filter is specified on **line 143** of this script.
 
 To see options, run:
 `python predict_fat_areas.py --help` or `python predict_fat_areas.py -h`
