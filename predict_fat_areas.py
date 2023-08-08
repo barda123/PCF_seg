@@ -11,9 +11,6 @@ import os
 from network_utils import gpu_memory_limit, predict_stochastic
 from MultiResUNet.MultiResUNet import MultiResUnet
 import pickle
-import tempfile
-import zipfile
-import re
 import glob
 import pydicom as dcm
 from optparse import OptionParser
@@ -61,7 +58,7 @@ parser.add_option(
     dest="output_segmentations",
     action="store_true",
     default=False,
-    help="Store segmentation results in .nii format",
+    help="Create and store segmentation results in .nii format (rather than just descriptive statistics)",
 )
 
 (options, args) = parser.parse_args()
