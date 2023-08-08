@@ -176,6 +176,7 @@ def quantify_fat(dicom_file):
             "StudyDate": dicom_object.StudyDate,
             "StudyTime": dicom_object.StudyTime,
             "InstanceCreationDate": dicom_object.InstanceCreationDate,
+            "SOPInstanceUID": dicom_object.SOPInstanceUID,
         }
 
         im = im.reshape((1, *im.shape, 1))
@@ -202,13 +203,20 @@ def quantify_fat(dicom_file):
             ), "you've broken something in the image dimensions"
 
             # output directory for segmentation
-            output_directory = os.path.join(OUTPUT_DIRECTORY, str(series_identifier))
+            output_directory = os.path.join(
+                OUTPUT_DIRECTORY, str(dicom_object.PatientName)
+            )
             if not os.path.isdir(output_directory):
                 os.makedirs(output_directory)
 
             # locations of the output nifti files...
-            img_loc = os.path.join(output_directory, "la_4ch_ED.nii.gz")
-            seg_loc = os.path.join(output_directory, "pcf_seg_la_4ch_ED.nii.gz")
+            img_loc = os.path.join(
+                output_directory, dicom_object.SOPInstanceUID + "_la_4ch_ED.nii.gz"
+            )
+            seg_loc = os.path.join(
+                output_directory,
+                dicom_object.SOPInstanceUID + "_pcf_seg_la_4ch_ED.nii.gz",
+            )
 
             # make niftis from dicom object...
             vol, pixdim, affine = dn.dicom_to_volume([dicom_object])
