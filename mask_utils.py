@@ -265,8 +265,10 @@ def dsc(yTrue,yPred):
     numerator = 2 * np.sum(np.logical_and(yTrue,yPred))
     
     denominator = np.sum(yTrue) + np.sum(yPred)
-    
-    return numerator/denominator
+    if denominator == 0:
+        return 0.0
+    else:
+        return numerator/denominator
 
 def symmetric_hausdorff_distance(yTrue,yPred,pxSpacing):
     
