@@ -14,7 +14,7 @@ import glob
 import sys
 import os
 
-usage="""
+usage = """
 Convert DICOM (MRI) files to NIFTI:
   dicom_to_nifti -i /path/to/input/ -o /path/to/output.nii.gz
   The input is a directory that contains a series of DICOM files.
@@ -26,8 +26,7 @@ Convert DICOM (MRI) files to NIFTI:
 
 
 def write_nifti(filename, vol, affine):
-    """Write a nifti file with an affine matrix.
-    """
+    """Write a nifti file with an affine matrix."""
     output = nib.Nifti1Image(vol.T, affine)
     nib.save(output, filename)
 
@@ -47,14 +46,14 @@ def create_affine(ipp, iop, ps):
     x, r, rank, s = np.linalg.lstsq(A, ipp, rcond=None)
     # round small values to zero
     x[(np.abs(x) < 1e-6)] = 0.0
-    vec = x[0,:] # slope
-    pos = x[1,:] # intercept
+    vec = x[0, :]  # slope
+    pos = x[1, :]  # intercept
 
     # pixel spacing should be the same for all image
     spacing = np.ones(3)
-    spacing[0:2] = ps[0,:]
-    if np.sum(np.abs(ps - spacing[0:2])) > spacing[0]*1e-6:
-        sys.stderr.write("Pixel spacing is inconsistent!\n");
+    spacing[0:2] = ps[0, :]
+    if np.sum(np.abs(ps - spacing[0:2])) > spacing[0] * 1e-6:
+        sys.stderr.write("Pixel spacing is inconsistent!\n")
 
     # compute slice spacing
     spacing[2] = np.round(np.sqrt(np.sum(np.square(vec))), 7)
@@ -72,16 +71,16 @@ def create_affine(ipp, iop, ps):
 
     # create the matrix
     mat = np.eye(4)
-    mat[0:3,0] = u*spacing[0]
-    mat[0:3,1] = v*spacing[1]
-    mat[0:3,2] = vec
-    mat[0:3,3] = pos
+    mat[0:3, 0] = u * spacing[0]
+    mat[0:3, 1] = v * spacing[1]
+    mat[0:3, 2] = vec
+    mat[0:3, 3] = pos
 
     # check whether slice vec is orthogonal to iop vectors
     dv = np.dot(vec, np.cross(u, v))
     qfac = np.sign(dv)
-    if np.abs(qfac*dv - spacing[2]) > 1e-6:
-        sys.stderr.write("Non-orthogonal volume!\n");
+    if np.abs(qfac * dv - spacing[2]) > 1e-6:
+        sys.stderr.write("Non-orthogonal volume!\n")
 
     # compute the nifti pixdim array
     pixdim = np.hstack([np.array(qfac), spacing])
@@ -97,15 +96,15 @@ def convert_coords(vol, mat):
     """
     # the x direction and y direction are flipped
     convmat = np.eye(4)
-    convmat[0,0] = -1.0
-    convmat[1,1] = -1.0
+    convmat[0, 0] = -1.0
+    convmat[1, 1] = -1.0
 
     # apply the coordinate change to the matrix
     mat[:] = np.dot(convmat, mat)
 
     # look for x and y elements with greatest magnitude
-    xabs = np.abs(mat[:,0])
-    yabs = np.abs(mat[:,1])
+    xabs = np.abs(mat[:, 0])
+    yabs = np.abs(mat[:, 1])
     xmaxi = np.argmax(xabs)
     yabs[xmaxi] = 0.0
     ymaxi = np.argmax(yabs)
@@ -113,25 +112,24 @@ def convert_coords(vol, mat):
     # re-order the data to ensure these elements aren't negative
     # (this may impact the way that the image is displayed, if the
     # software that displays the image ignores the matrix).
-    if mat[xmaxi,0] < 0.0:
+    if mat[xmaxi, 0] < 0.0:
         # flip x
         vol[:] = np.flip(vol, 2)
-        mat[:,3] += mat[:,0]*(vol.shape[2] - 1)
-        mat[:,0] = -mat[:,0]
-    if mat[ymaxi,1] < 0.0:
+        mat[:, 3] += mat[:, 0] * (vol.shape[2] - 1)
+        mat[:, 0] = -mat[:, 0]
+    if mat[ymaxi, 1] < 0.0:
         # flip y
         vol[:] = np.flip(vol, 1)
-        mat[:,3] += mat[:,1]*(vol.shape[1] - 1)
-        mat[:,1] = -mat[:,1]
+        mat[:, 3] += mat[:, 1] * (vol.shape[1] - 1)
+        mat[:, 1] = -mat[:, 1]
 
     # eliminate "-0.0" (negative zero) in the matrix
     mat[mat == 0.0] = 0.0
-    return vol,mat
+    return vol, mat
 
 
 def find_dicom_files(path):
-    """Search for DICOM files at the provided location.
-    """
+    """Search for DICOM files at the provided location."""
     if os.path.isdir(path):
         # check for common DICOM suffixes
         for ext in ("*.dcm", "*.DCM", "*.dc", "*.DC", "*.IMG"):
@@ -169,7 +167,7 @@ def load_dicom_series(files):
             i = int(ds.InstanceNumber)
         except (AttributeError, ValueError):
             i = -1
-        dataset_list.append( (i, ds) )
+        dataset_list.append((i, ds))
 
     # sort by InstanceNumber (the first element of each tuple)
     dataset_list.sort(key=lambda t: t[0])
@@ -191,9 +189,9 @@ def dicom_to_volume(dicom_series):
     n = len(dicom_series)
     shape = (n,) + dicom_series[0].pixel_array.shape
     vol = np.empty(shape, dtype=np.float32)
-    ps = np.empty((n,2), dtype=np.float64)
-    ipp = np.empty((n,3), dtype=np.float64)
-    iop = np.empty((n,6), dtype=np.float64)
+    ps = np.empty((n, 2), dtype=np.float64)
+    ipp = np.empty((n, 3), dtype=np.float64)
+    iop = np.empty((n, 6), dtype=np.float64)
 
     for i, ds in enumerate(dicom_series):
         # create a single complex-valued image from real,imag
@@ -206,10 +204,10 @@ def dicom_to_volume(dicom_series):
             intercept = float(ds.RescaleIntercept)
         except (AttributeError, ValueError):
             intercept = 0.0
-        vol[i,:,:] = image*slope + intercept
-        ps[i,:] = dicom_series[i].PixelSpacing
-        ipp[i,:] = dicom_series[i].ImagePositionPatient
-        iop[i,:] = dicom_series[i].ImageOrientationPatient
+        vol[i, :, :] = image * slope + intercept
+        ps[i, :] = dicom_series[i].PixelSpacing
+        ipp[i, :] = dicom_series[i].ImagePositionPatient
+        iop[i, :] = dicom_series[i].ImageOrientationPatient
 
     # create nibabel-style affine matrix and pixdim
     # (these give DICOM LPS coords, not NIFTI RAS coords)
@@ -218,16 +216,16 @@ def dicom_to_volume(dicom_series):
 
 
 def main(argv):
-    """Callable entry point.
-    """
+    """Callable entry point."""
     parser = argparse.ArgumentParser(prog=argv[0], usage=usage)
 
-    parser.add_argument('-i', '--input', required=True,
-                        help="Input folder for complex images.")
-    parser.add_argument('-o', '--output', required=True,
-                        help="Output folder for nifti images.")
-    parser.add_argument('-v', '--verbose', action='count',
-                        help="Turn on verbosity.")
+    parser.add_argument(
+        "-i", "--input", required=True, help="Input folder for complex images."
+    )
+    parser.add_argument(
+        "-o", "--output", required=True, help="Output folder for nifti images."
+    )
+    parser.add_argument("-v", "--verbose", action="count", help="Turn on verbosity.")
 
     args = parser.parse_args(argv[1:])
 
@@ -261,7 +259,87 @@ def main(argv):
     write_nifti(args.output, vol, mat)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     r = main(sys.argv)
     if r is not None:
         sys.exit(r)
+
+
+def get_affine(d):
+    # Copyright 2017.
+    # Author: Wenjia Bai, Biomedical Image Analysis Group, Imperial College London.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    # ==============================================================================
+    X = d.Columns
+    Y = d.Rows
+    Z = 1  # because in this context all images are 2D
+
+    dx = float(d.PixelSpacing[1])
+    dy = float(d.PixelSpacing[0])
+
+    # DICOM coordinate (LPS)
+    #  x: left
+    #  y: posterior
+    #  z: superior
+    # Nifti coordinate (RAS)
+    #  x: right
+    #  y: anterior
+    #  z: superior
+    # Therefore, to transform between DICOM and Nifti, the x and y coordinates need to be negated.
+    # Refer to
+    # http://nifti.nimh.nih.gov/pub/dist/src/niftilib/nifti1.h
+    # http://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/figqformusage
+
+    # The coordinate of the upper-left voxel of the first and second slices
+    pos_ul = np.array([float(x) for x in d.ImagePositionPatient])
+    pos_ul[:2] = -pos_ul[:2]
+
+    # Image orientation
+    axis_x = np.array([float(x) for x in d.ImageOrientationPatient[:3]])
+    axis_y = np.array([float(x) for x in d.ImageOrientationPatient[3:]])
+    axis_x[:2] = -axis_x[:2]
+    axis_y[:2] = -axis_y[:2]
+
+    if Z >= 2:
+        # Read a dicom file at the second slice
+        d2 = dicom.read_file(os.path.join(dir[1], sorted(os.listdir(dir[1]))[0]))
+        pos_ul2 = np.array([float(x) for x in d2.ImagePositionPatient])
+        pos_ul2[:2] = -pos_ul2[:2]
+        axis_z = pos_ul2 - pos_ul
+        axis_z = axis_z / np.linalg.norm(axis_z)
+    else:
+        axis_z = np.cross(axis_x, axis_y)
+
+    # Determine the z spacing
+    if hasattr(d, "SpacingBetweenSlices"):
+        dz = float(d.SpacingBetweenSlices)
+    elif Z >= 2:
+        print(
+            "Warning: can not find attribute SpacingBetweenSlices. Calculate from two successive slices."
+        )
+        dz = float(np.linalg.norm(pos_ul2 - pos_ul))
+    else:
+        print(
+            "Warning: can not find attribute SpacingBetweenSlices. Use attribute SliceThickness instead."
+        )
+        dz = float(d.SliceThickness)
+
+    # Affine matrix which converts the voxel coordinate to world coordinate
+    affine = np.eye(4)
+    affine[:3, 0] = axis_x * dx
+    affine[:3, 1] = axis_y * dy
+    affine[:3, 2] = axis_z * dz
+    affine[:3, 3] = pos_ul
+
+    return affine
