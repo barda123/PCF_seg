@@ -6,7 +6,6 @@ import numpy as np
 
 from mask_utils import load_image, resample_image, pad_voxels
 
-from tensorflow.keras.models import models_from_json
 import os
 from network_utils import gpu_memory_limit, predict_stochastic
 from MultiResUNet.MultiResUNet import MultiResUnet
