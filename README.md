@@ -60,7 +60,7 @@ In order to run it, follow the notes in `data/notes.txt`, ensuring in particular
 
 ### Training a new model
 
-Follow the notes in `data/notes.txt`, ensuring in particular that you can access `data/pericardial/wsx_round2/` **on the GPU machine**. These are the data which were used to train and test the original published model, and were created by `extract_dcm_for_wsx.py`.
+If you are within the Petersen group at QMUL, you should be able to follow the notes in `data/notes.txt`, ensuring in particular that you can access `data/pericardial/wsx_round2/` **on the GPU machine**. These are the data which were used to train and test the original published model, and were created by `extract_dcm_for_wsx.py`.
 
 This script performs the following:
  * Loads numpy arrays representing preprocessed images
@@ -72,7 +72,7 @@ In order to run as-is, you can simply:
 
 `python train.py`
 
-Running this script should create and train some figures which describe the new model's performance. The script will print out the location where the model is being saved, you should make a note of this.
+Running this script should create and train a mode, outputting some figures which describe the new model's performance. The script will print out the location where the model is being saved, you should make a note of this.
 
 In order to train a model using a combination of existing + novel data, I recommend:
  * Understanding how `train.py` currently functions
